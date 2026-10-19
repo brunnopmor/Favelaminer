@@ -135,7 +135,7 @@ function pixFields(order) {
 app.get("/api/health", (_req, res) => res.json({
   status: "ok",
   service: "mineable-api",
-  paymentsConfigured: Boolean(process.env.MP_ACCESS_TOKEN && process.env.MP_WEBHOOK_SECRET),
+  paymentsConfigured: Boolean(process.env.PIX_PAYMENTS_ENABLED === "true" && process.env.MP_ACCESS_TOKEN && process.env.MP_WEBHOOK_SECRET),
   databaseConfigured: Boolean(pool),
   realMiningConnected: false,
   cryptoPayoutsEnabled: false
@@ -237,7 +237,8 @@ app.post("/api/payments/pix", auth, requireVerifiedEmail, async (req, res, next)
   if (!Number.isFinite(amount) || amountMinor < 500 || amountMinor > 500000) {
     return res.status(400).json({ error: "Pix top-ups must be between R$ 5.00 and R$ 5,000.00." });
   }
-  if (!process.env.MP_ACCESS_TOKEN || !process.env.MP_WEBHOOK_SECRET || !process.env.APP_BASE_URL) return res.status(503).json({ error: "Pix checkout is disabled until both the Mercado Pago token and signed-webhook secret are configured." });
+  if (process.env.PIX_PAYMENTS_ENABLED !== "true") return res.status(503).json({ error: "Pix deposits are disabled by the server feature flag." });
+  if (!process.env.MP_ACCESS_TOKEN || !process.env.MP_WEBHOOK_SECRET || !process.env.APP_BASE_URL) return res.status(503).json({ error: "Pix checkout is disabled until the Mercado Pago token, signed-webhook secret, and public app URL are configured." });
   const paymentId = crypto.randomUUID();
   const idempotencyKey = crypto.randomUUID();
   let client;
