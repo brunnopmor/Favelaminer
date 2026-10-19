@@ -176,7 +176,9 @@ app.post("/api/auth/register", async (req, res, next) => {
     await sendVerificationEmail(email, rawToken);
     res.status(201).json({ message: "Account created. Check your email to verify it before signing in." });
   } catch (error) {
-    // Keep account unverified and don't return the secret token to the browser.
+    // Remove the unverified account if the verification email could not be delivered,
+    // so the user can retry registration without an orphaned account.
+    await database().query("DELETE FROM users WHERE id=$1 AND email_verified_at IS NULL", [user.id]).catch(() => {});
     next(error);
   }
 });
