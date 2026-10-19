@@ -44,7 +44,8 @@ The placeholder `DATABASE_URL`, JWT secret, Resend API key, Mercado Pago access 
 2. Configure a webhook for orders/payment updates to `https://YOUR_DOMAIN/api/webhooks/mercadopago`; set the webhook secret as `MP_WEBHOOK_SECRET`.
 3. Set `MP_ACCESS_TOKEN` only in the server's environment, never in browser JavaScript.
 4. Register a verified sender with the email provider and configure `RESEND_API_KEY` and `MAIL_FROM`.
-5. Test payment creation, QR/copy-and-paste code, signed webhook verification, duplicate notifications, wrong amounts, pending/failed orders, database outages and ledger reconciliation before moving to production credentials.
+5. Test payment creation, QR/copy-and-paste code, signed webhook verification, duplicate notifications, wrong amounts, pending/failed orders, database outages and ledger reconciliation with the feature flag disabled from any public/production user-facing flow.
+6. Keep `PIX_PAYMENTS_ENABLED=false` until the business model, refunds, accounting reconciliation, provider notification URL and required legal/tax documents have been reviewed. Only then may an operator explicitly enable it with production secrets.
 
 The server checks the provider's order status after receiving a signed webhook and credits BRL only once in a database transaction after settlement is confirmed. Never mark a client-side redirect or browser message as proof of payment.
 
