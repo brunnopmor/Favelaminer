@@ -91,7 +91,7 @@ async function sendVerificationEmail(email, token) {
   if (!process.env.RESEND_API_KEY || !process.env.MAIL_FROM || !process.env.APP_BASE_URL) {
     throw Object.assign(new Error("Email verification is not configured. Set RESEND_API_KEY, MAIL_FROM and APP_BASE_URL before enabling registration."), { status: 503 });
   }
-  const link = new URL("/verify-email", process.env.APP_BASE_URL);
+  const link = new URL("/", process.env.APP_BASE_URL);
   link.searchParams.set("token", token);
   const response = await fetch("https://api.resend.com/emails", {
     method: "POST",
@@ -283,46 +283,49 @@ app.post("/api/webhooks/mercadopago", async (req, res, next) => {
     if (!verifyMpSignature(req)) return res.status(401).json({ error: "Invalid webhook signature." });
     const providerOrderId = String(req.query["data.id"] || req.query.id || "");
     const requestId = String(req.get("x-request-id") || "");
-    const eventKey = `${providerOrderId}:${requestId}`;
+    // Query the provider after authenticating the notification. Never trust its body as settlement evidence.
+    const order = await mpRequest("https://api.mercadopago.com/v1/orders/" + encodeURIComponent(providerOrderId), { method: "GET" });
+    const externalReference = String(order.external_reference || "");
+    const settled = order.status === "processed" &&
+      (order?.transactions?.payments || []).some(payment => payment.status === "processed" || payment.status === "approved");
     const client = await database().connect();
     try {
-      const inserted = await client.query(
+      await client.query("BEGIN");
+      const eventKey = providerOrderId + ":" + requestId;
+      const event = await client.query(
         "INSERT INTO webhook_events(provider,event_key,event_type) VALUES('mercadopago',$1,$2) ON CONFLICT DO NOTHING RETURNING id",
         [eventKey, String(req.body?.action || req.body?.type || "unknown")]
       );
-      if (!inserted.rowCount) {
-        await client.query("COMMIT").catch(() => {});
+      if (!event.rowCount) {
+        await client.query("COMMIT");
         return res.status(200).json({ received: true, duplicate: true });
       }
-    } finally { client.release(); }
-
-    const order = await mpRequest("https://api.mercadopago.com/v1/orders/" + encodeURIComponent(providerOrderId), { method: "GET" });
-    const reference = String(order.external_reference || "");
-    const payments = order?.transactions?.payments || [];
-    const settled = order.status === "processed" && payments.some(p => p.status === "processed" || p.status === "approved");
-    const db = database();
-    const client2 = await db.connect();
-    try {
-      await client2.query("BEGIN");
-      const paymentResult = await client2.query("SELECT * FROM payments WHERE id=$1 AND provider_order_id=$2 FOR UPDATE", [reference, providerOrderId]);
-      if (paymentResult.rowCount && settled) {
-        const payment = paymentResult.rows[0];
-        const paidAmount = Number(order.total_amount);
-        const expectedAmount = Number(payment.amount_minor) / 100;
+      const matched = await client.query(
+        "SELECT * FROM payments WHERE id=$1 AND provider_order_id=$2 FOR UPDATE",
+        [externalReference, providerOrderId]
+      );
+      if (matched.rowCount && settled) {
+        const payment = matched.rows[0];
+        const actualMinor = Math.round(Number(order.total_amount) * 100);
         const currency = String(order.currency_id || "BRL").toUpperCase();
-        if (Math.round(paidAmount * 100) !== Number(payment.amount_minor) || currency !== "BRL") {
-          await client2.query("UPDATE payments SET provider_status='amount_mismatch',provider_payload=$1,updated_at=now() WHERE id=$2", [JSON.stringify({ id: order.id, status: order.status, amount: paidAmount, currency }), payment.id]);
+        if (actualMinor !== Number(payment.amount_minor) || currency !== payment.currency) {
+          await client.query("UPDATE payments SET provider_status='amount_mismatch',provider_payload=$1,updated_at=now() WHERE id=$2",
+            [JSON.stringify({ id: order.id, status: order.status, amount: order.total_amount, currency }), payment.id]);
         } else if (!payment.credited_at) {
-          await client2.query("UPDATE payments SET status='approved',provider_status=$1,provider_payload=$2,credited_at=now(),updated_at=now() WHERE id=$3", [String(order.status), JSON.stringify({ id: order.id, status: order.status }), payment.id]);
-          await client2.query(
+          await client.query("UPDATE payments SET status='approved',provider_status=$1,provider_payload=$2,credited_at=now(),updated_at=now() WHERE id=$3",
+            [String(order.status), JSON.stringify({ id: order.id, status: order.status }), payment.id]);
+          await client.query(
             "INSERT INTO ledger_entries(user_id,asset,direction,amount_minor,entry_type,reference_id) VALUES($1,'BRL','credit',$2,'pix_deposit',$3) ON CONFLICT DO NOTHING",
             [payment.user_id, payment.amount_minor, payment.id]
           );
         }
       }
-      await client2.query("COMMIT");
-    } catch (error) { await client2.query("ROLLBACK").catch(() => {}); throw error; }
-    finally { client2.release(); }
+      await client.query("UPDATE webhook_events SET processed_at=now() WHERE id=$1", [event.rows[0].id]);
+      await client.query("COMMIT");
+    } catch (error) {
+      await client.query("ROLLBACK").catch(() => {});
+      throw error;
+    } finally { client.release(); }
     res.status(200).json({ received: true });
   } catch (error) { next(error); }
 });
