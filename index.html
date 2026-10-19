@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="theme-color" content="#0b0f0d" />
+  <meta name="description" content="Mineable — painel de GPUs virtuais e recompensas." />
+  <title>Mineable — Virtual Mining</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div class="app-shell">
+    <aside class="sidebar" id="sidebar">
+      <a href="#" class="brand" aria-label="Mineable início"><span class="brand-mark"><span></span><span></span><span></span></span><span>MINEABLE<span class="brand-dot">.</span></span></a>
+      <div class="side-caption">WORKSPACE</div>
+      <nav class="main-nav" aria-label="Navegação principal">
+        <button class="nav-item active" data-page="overview"><span class="nav-icon">◫</span>Overview</button>
+        <button class="nav-item" data-page="miners"><span class="nav-icon">▦</span>My Miners <span class="nav-count" id="minerCount">2</span></button>
+        <button class="nav-item" data-page="market"><span class="nav-icon">⌘</span>Marketplace</button>
+        <button class="nav-item" data-page="wallet"><span class="nav-icon">◇</span>Wallet</button>
+        <button class="nav-item" data-page="rewards"><span class="nav-icon">✳</span>Rewards</button>
+      </nav>
+      <div class="side-caption lower-caption">ACCOUNT</div>
+      <nav class="main-nav">
+        <button class="nav-item" data-page="referrals"><span class="nav-icon">♧</span>Referrals</button>
+        <button class="nav-item" data-page="settings"><span class="nav-icon">⚙</span>Settings</button>
+      </nav>
+      <div class="sidebar-bottom">
+        <div class="support-card"><div class="support-icon">?</div><div><b>Need a hand?</b><span>Visit our help center</span></div><span class="arrow">↗</span></div>
+        <div class="profile"><div class="avatar">GM</div><div class="profile-copy"><b>Guest Miner</b><span>Starter account</span></div><button class="more-btn" aria-label="Opções">···</button></div>
+      </div>
+    </aside>
+
+    <main class="main-content">
+      <header class="topbar">
+        <button class="mobile-menu" id="mobileMenu" aria-label="Abrir menu">☰</button>
+        <div class="breadcrumbs"><span>Workspace</span><span class="crumb-slash">/</span><b id="pageCrumb">Overview</b></div>
+        <div class="top-actions"><span class="status-pill"><i></i> SYSTEM OPERATIONAL</span><button class="icon-button" id="notifBtn" aria-label="Notificações">♧<span class="notification-dot"></span></button><button class="help-button" id="helpBtn">Help center ↗</button></div>
+      </header>
+
+      <section class="page active-page" id="page-overview">
+        <div class="welcome-row"><div><div class="eyebrow"><span class="eyebrow-line"></span> MONDAY, OCTOBER 19, 2026</div><h1>Your mining <span>overview.</span></h1><p class="subtitle">Here's what's happening with your virtual mining operation.</p></div><button class="primary-button" data-go="market"><span>＋</span> Explore miners</button></div>
+        <div class="stats-grid">
+          <article class="stat-card balance-card"><div class="stat-heading"><span>Total balance</span><span class="stat-icon">◈</span></div><div class="stat-value"><span id="balanceValue">0.0842</span><span class="coin-label">BTC</span></div><div class="stat-foot"><span class="positive">↗ 4.8%</span><span>vs. last week</span></div><div class="balance-chart"><svg viewBox="0 0 260 48" preserveAspectRatio="none" aria-label="Gráfico ilustrativo de saldo"><path d="M0 42 C16 40 18 28 34 31 S55 39 68 24 S91 27 104 19 S127 32 141 18 S164 21 180 13 S201 21 218 8 S241 15 260 2 L260 48 L0 48Z" fill="rgba(166,255,91,.10)"/><path d="M0 42 C16 40 18 28 34 31 S55 39 68 24 S91 27 104 19 S127 32 141 18 S164 21 180 13 S201 21 218 8 S241 15 260 2" fill="none" stroke="#a6ff5b" stroke-width="2"/></svg></div></article>
+          <article class="stat-card"><div class="stat-heading"><span>Active hashrate</span><span class="stat-icon">⌁</span></div><div class="stat-value">184.6 <span class="unit">MH/s</span></div><div class="stat-foot"><span class="positive">↗ 12.3%</span><span>vs. last week</span></div><div class="mini-bars" aria-label="Gráfico ilustrativo"><i style="height:28%"></i><i style="height:45%"></i><i style="height:36%"></i><i style="height:54%"></i><i style="height:43%"></i><i style="height:64%"></i><i style="height:48%"></i><i style="height:72%"></i><i style="height:61%"></i><i style="height:82%"></i><i style="height:68%"></i><i style="height:100%"></i></div></article>
+          <article class="stat-card"><div class="stat-heading"><span>Rewards earned</span><span class="stat-icon">✳</span></div><div class="stat-value"><span id="rewardsValue">0.00284</span><span class="unit">BTC</span></div><div class="stat-foot"><span class="positive">↗ 8.1%</span><span>this month</span></div><div class="reward-progress"><div class="progress-label"><span>Monthly goal</span><b>68%</b></div><div class="progress-track"><span style="width:68%"></span></div></div></article>
+          <article class="stat-card"><div class="stat-heading"><span>Active miners</span><span class="stat-icon">▦</span></div><div class="stat-value"><span id="activeCount">2</span><span class="unit">/ 5</span></div><div class="stat-foot"><span class="muted-dot"></span><span>2 running · 0 paused</span></div><div class="active-miners-mini"><span class="gpu-mini">▦</span><div><b>RTX Forge X</b><span>92.3 MH/s</span></div><span class="live-dot"></span></div></article>
+        </div>
+
+        <div class="section-grid">
+          <section class="panel mining-panel"><div class="panel-header"><div><div class="eyebrow">PERFORMANCE</div><h2>Mining activity</h2></div><div class="range-select"><button class="range-btn selected" data-range="24H">24H</button><button class="range-btn" data-range="7D">7D</button><button class="range-btn" data-range="30D">30D</button></div></div><div class="chart-summary"><div><span>Estimated output</span><b id="chartTotal">0.00042 <small>BTC</small></b></div><span class="chart-change">↗ 6.2%</span></div><div class="chart-wrap"><div class="y-labels"><span>0.0005</span><span>0.0004</span><span>0.0003</span><span>0.0002</span><span>0.0001</span><span>0</span></div><div class="chart-area"><div class="chart-grid"><i></i><i></i><i></i><i></i><i></i><i></i></div><svg id="activityChart" viewBox="0 0 640 210" preserveAspectRatio="none" role="img" aria-label="Gráfico ilustrativo de atividade"><defs><linearGradient id="areaFill" x1="0" x2="0" y1="0" y2="1"><stop offset="0%" stop-color="#a6ff5b" stop-opacity=".22"/><stop offset="100%" stop-color="#a6ff5b" stop-opacity="0"/></linearGradient></defs><path id="chartArea" d="M0 172 C25 164 31 128 55 141 S84 163 104 118 S135 129 158 106 S187 138 210 100 S239 115 260 78 S287 113 313 88 S343 97 365 62 S393 96 418 71 S450 87 475 51 S505 72 527 43 S558 64 580 27 S613 52 640 15 L640 210 L0 210Z" fill="url(#areaFill)"/><path id="chartLine" d="M0 172 C25 164 31 128 55 141 S84 163 104 118 S135 129 158 106 S187 138 210 100 S239 115 260 78 S287 113 313 88 S343 97 365 62 S393 96 418 71 S450 87 475 51 S505 72 527 43 S558 64 580 27 S613 52 640 15" fill="none" stroke="#a6ff5b" stroke-width="2.5" stroke-linecap="round"/></svg><div class="x-labels" id="chartLabels"><span>00:00</span><span>04:00</span><span>08:00</span><span>12:00</span><span>16:00</span><span>20:00</span><span>24:00</span></div></div></div><div class="chart-legend"><span><i></i> Hashrate output</span><span>Illustrative demo data</span></div></section>
+
+          <section class="panel miners-panel"><div class="panel-header"><div><div class="eyebrow">YOUR HARDWARE</div><h2>My miners <span class="small-count">02</span></h2></div><button class="text-button" data-go="miners">View all ↗</button></div><div class="miner-list" id="dashboardMinerList"><article class="miner-row"><div class="miner-visual">▦<span>GPU</span></div><div class="miner-info"><div class="miner-title">RTX Forge X <span class="tag online">ONLINE</span></div><div class="miner-spec">NVIDIA · Level 3</div><div class="miner-progress"><span style="width:76%"></span></div><div class="miner-foot"><span>76% efficiency</span><span>92.3 MH/s</span></div></div><button class="mini-menu" aria-label="Miner options">···</button></article><article class="miner-row"><div class="miner-visual violet">▦<span>GPU</span></div><div class="miner-info"><div class="miner-title">HashCore A2 <span class="tag online">ONLINE</span></div><div class="miner-spec">AMD · Level 2</div><div class="miner-progress violet-track"><span style="width:61%"></span></div><div class="miner-foot"><span>61% efficiency</span><span>92.3 MH/s</span></div></div><button class="mini-menu" aria-label="Miner options">···</button></article></div><button class="outline-button full-width" data-go="market">＋ Add a new miner</button></section>
+        </div>
+
+        <section class="panel transactions-panel"><div class="panel-header"><div><div class="eyebrow">LATEST UPDATES</div><h2>Recent activity</h2></div><button class="text-button" data-go="wallet">View history ↗</button></div><div class="table-scroll"><table><thead><tr><th>TRANSACTION</th><th>DATE</th><th>AMOUNT</th><th>STATUS</th></tr></thead><tbody id="activityTable"><tr><td><span class="tx-icon reward-tx">✳</span><span class="tx-name">Mining reward</span></td><td>Oct 19, 2026 · 10:42</td><td class="amount-positive">+0.000024 BTC</td><td><span class="tag completed">COMPLETED</span></td></tr><tr><td><span class="tx-icon upgrade-tx">↑</span><span class="tx-name">Miner upgrade</span></td><td>Oct 18, 2026 · 16:08</td><td class="amount-negative">− 120 credits</td><td><span class="tag completed">COMPLETED</span></td></tr><tr><td><span class="tx-icon reward-tx">✳</span><span class="tx-name">Mining reward</span></td><td>Oct 18, 2026 · 08:21</td><td class="amount-positive">+0.000019 BTC</td><td><span class="tag completed">COMPLETED</span></td></tr></tbody></table></div></section>
+        <footer class="page-footer"><span>© 2026 Mineable Lab. Independent concept demo.</span><span><i class="footer-live"></i> Demo environment · No real mining</span></footer>
+      </section>
+
+      <section class="page" id="page-miners"><div class="welcome-row"><div><div class="eyebrow">YOUR HARDWARE</div><h1>My <span>miners.</span></h1><p class="subtitle">Manage your virtual GPUs and improve your capacity.</p></div><button class="primary-button" data-go="market">＋ Browse marketplace</button></div><div class="miner-catalog" id="minersPageList"></div></section>
+      <section class="page" id="page-market"><div class="welcome-row"><div><div class="eyebrow">EXPLORE THE MARKET</div><h1>Find your next <span>miner.</span></h1><p class="subtitle">Build your virtual mining rig, one GPU at a time.</p></div><span class="status-pill">DEMO CATALOG</span></div><div class="market-grid" id="marketGrid"></div></section>
+      <section class="page" id="page-wallet"><div class="welcome-row"><div><div class="eyebrow">ASSETS & TRANSACTIONS</div><h1>Your <span>wallet.</span></h1><p class="subtitle">Track demo balances and simulated transaction history.</p></div></div><div class="wallet-grid"><article class="wallet-balance"><div class="stat-heading"><span>Demo balance</span><span>◈</span></div><strong>0.0842 BTC</strong><p>Sample data only. No funds are held or transferable.</p><button class="primary-button" id="requestWithdraw">Request withdrawal</button></article><article class="wallet-asset"><div class="coin-avatar">₿</div><div><b>Bitcoin</b><span>BTC · Demo asset</span></div><strong>0.0842 BTC</strong></article></div><section class="panel transactions-panel"><div class="panel-header"><h2>Transaction history</h2></div><div class="table-scroll"><table><thead><tr><th>TRANSACTION</th><th>DATE</th><th>AMOUNT</th><th>STATUS</th></tr></thead><tbody id="walletTable"></tbody></table></div></section></section>
+      <section class="page" id="page-rewards"><div class="welcome-row"><div><div class="eyebrow">YOUR PROGRESS</div><h1>Earn more <span>rewards.</span></h1><p class="subtitle">Follow your demo reward progress and milestones.</p></div></div><div class="reward-cards"><article class="panel reward-card"><span class="reward-symbol">✳</span><div class="eyebrow">TOTAL THIS MONTH</div><h2>0.00284 BTC</h2><p>Sample accrued rewards</p><div class="progress-track"><span style="width:68%"></span></div><div class="progress-label"><span>Monthly goal</span><b>68%</b></div></article><article class="panel reward-card"><span class="reward-symbol purple">♧</span><div class="eyebrow">COMMUNITY BONUS</div><h2>Invite a friend</h2><p>Referral bonuses are not enabled in this demo.</p><button class="outline-button" data-go="referrals">Referral program ↗</button></article><article class="panel reward-card"><span class="reward-symbol gold">◇</span><div class="eyebrow">NEXT MILESTONE</div><h2>Early Adopter</h2><p>Connect a verified account when authentication is configured.</p><span class="tag">LOCKED</span></article></div></section>
+      <section class="page" id="page-referrals"><div class="welcome-row"><div><div class="eyebrow">GROW TOGETHER</div><h1>Your <span>network.</span></h1><p class="subtitle">Referral tracking is prepared for a future backend integration.</p></div></div><section class="panel placeholder-panel"><div class="placeholder-icon">♧</div><h2>Referral program coming soon</h2><p>No invitations or reward credits are created in this demo. A verified referral system will require authenticated accounts and server-side reward validation.</p></section></section>
+      <section class="page" id="page-settings"><div class="welcome-row"><div><div class="eyebrow">PREFERENCES</div><h1>Account <span>settings.</span></h1><p class="subtitle">Local demo preferences.</p></div></div><section class="panel settings-panel"><div class="setting-row"><div><b>Demo mode</b><p>Sample data only; no real funds or mining.</p></div><span class="tag online">ENABLED</span></div><div class="setting-row"><div><b>Notifications</b><p>Show local demo messages when actions are performed.</p></div><button class="outline-button" id="testNotice">Test notification</button></div><div class="setting-row"><div><b>Reset local demo</b><p>Restore the sample counters and miner catalog.</p></div><button class="danger-button" id="resetDemo">Reset demo</button></div></section></section>
+    </main>
+  </div>
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+  <dialog id="appDialog"><form method="dialog" class="dialog-card"><button class="dialog-close" aria-label="Close">×</button><div class="dialog-symbol">◈</div><h2 id="dialogTitle">Demo action</h2><p id="dialogText">This is a local demo.</p><button class="primary-button dialog-confirm">Got it</button></form></dialog>
+  <script src="app.js"></script>
+</body>
+</html>
