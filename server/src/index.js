@@ -1,6 +1,5 @@
 import "dotenv/config";
 import crypto from "node:crypto";
-import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import express from "express";
@@ -14,6 +13,7 @@ import pg from "pg";
 const { Pool } = pg;
 const app = express();
 const port = Number(process.env.PORT || 3000);
+const rootDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..");
 const required = ["DATABASE_URL", "JWT_SECRET", "APP_BASE_URL"];
 const missing = required.filter((key) => !process.env[key]);
 if (missing.length) console.warn("Missing server environment variables:", missing.join(", "));
@@ -27,7 +27,7 @@ const pool = process.env.DATABASE_URL ? new Pool({
 }) : null;
 
 app.disable("x-powered-by");
-app.use(helmet());
+app.use(helmet({ contentSecurityPolicy: { directives: { ...helmet.contentSecurityPolicy.getDefaultDirectives(), "style-src": ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"], "font-src": ["'self'", "https://fonts.gstatic.com", "data:"], "img-src": ["'self'", "data:"] } } }));
 app.use(cors({ origin: (process.env.ALLOWED_ORIGINS || "").split(",").map((v) => v.trim()).filter(Boolean), credentials: false }));
 app.use(express.json({ limit: "24kb" }));
 app.use("/api/auth", rateLimit({ windowMs: 15 * 60 * 1000, limit: 12, standardHeaders: "draft-7", legacyHeaders: false }));
@@ -347,6 +347,12 @@ app.post("/api/withdrawals/crypto", auth, requireVerifiedEmail, (_req, res) => {
   // risk controls, ledger reservation, and on-chain reconciliation are implemented.
   res.status(503).json({ error: "Crypto withdrawals are disabled. No crypto payout provider is configured or validated." });
 });
+
+// Serve only public UI files; never expose backend or repository source directories.
+app.get(["/", "/index.html"], (_req, res) => res.sendFile(path.join(rootDir, "index.html")));
+app.get("/styles.css", (_req, res) => res.sendFile(path.join(rootDir, "styles.css")));
+app.get("/app.js", (_req, res) => res.sendFile(path.join(rootDir, "app.js")));
+app.get("/payments-ui.js", (_req, res) => res.sendFile(path.join(rootDir, "payments-ui.js")));
 
 app.use((error, _req, res, _next) => {
   const status = Number(error.status) || 500;
