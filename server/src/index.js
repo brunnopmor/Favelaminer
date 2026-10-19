@@ -238,10 +238,11 @@ app.post("/api/payments/pix", auth, requireVerifiedEmail, async (req, res, next)
     return res.status(400).json({ error: "Pix top-ups must be between R$ 5.00 and R$ 5,000.00." });
   }
   if (!process.env.MP_ACCESS_TOKEN || !process.env.MP_WEBHOOK_SECRET || !process.env.APP_BASE_URL) return res.status(503).json({ error: "Pix checkout is disabled until both the Mercado Pago token and signed-webhook secret are configured." });
-  const client = await database().connect();
   const paymentId = crypto.randomUUID();
   const idempotencyKey = crypto.randomUUID();
+  let client;
   try {
+    client = await database().connect();
     await client.query("BEGIN");
     await client.query(
       "INSERT INTO payments(id,user_id,external_reference,idempotency_key,amount_minor) VALUES($1,$2,$1,$3,$4)",
@@ -249,11 +250,11 @@ app.post("/api/payments/pix", auth, requireVerifiedEmail, async (req, res, next)
     );
     await client.query("COMMIT");
   } catch (error) {
-    await client.query("ROLLBACK").catch(() => {});
-    client.release();
+    if (client) await client.query("ROLLBACK").catch(() => {});
     return next(error);
+  } finally {
+    if (client) client.release();
   }
-  client.release();
   try {
     const order = await mpRequest("https://api.mercadopago.com/v1/orders", {
       method: "POST",
@@ -282,7 +283,7 @@ app.post("/api/payments/pix", auth, requireVerifiedEmail, async (req, res, next)
     );
     res.status(201).json({ paymentId, providerOrderId: String(order.id), amount: amount.toFixed(2), currency: "BRL", status: "pending", ...fields, notice: "Credits are added only after a signed provider notification confirms settlement." });
   } catch (error) {
-    await database().query("UPDATE payments SET provider_status='creation_error',updated_at=now() WHERE id=$1 AND status='pending'", [paymentId]).catch(() => {});
+    await database().query("UPDATE payments SET status='rejected',provider_status='creation_error',updated_at=now() WHERE id=$1 AND status='pending'", [paymentId]).catch(() => {});
     next(error);
   }
 });
