@@ -142,6 +142,7 @@ app.get("/api/health", (_req, res) => res.json({
 }));
 
 app.post("/api/auth/register", async (req, res, next) => {
+  if (!process.env.RESEND_API_KEY || !process.env.MAIL_FROM || !process.env.APP_BASE_URL) return res.status(503).json({ error: "Email verification is not configured on the server." });
   const email = String(req.body?.email || "").trim().toLowerCase();
   const password = req.body?.password;
   if (!emailValid(email) || typeof password !== "string" || password.length < 12 || password.length > 128) {
@@ -276,6 +277,17 @@ app.post("/api/payments/pix", auth, requireVerifiedEmail, async (req, res, next)
     await database().query("UPDATE payments SET provider_status='creation_error',updated_at=now() WHERE id=$1 AND status='pending'", [paymentId]).catch(() => {});
     next(error);
   }
+});
+
+app.get("/api/payments/:paymentId", auth, async (req, res, next) => {
+  try {
+    const result = await database().query(
+      "SELECT id,amount_minor,currency,status,created_at,credited_at FROM payments WHERE id=$1 AND user_id=$2",
+      [req.params.paymentId, req.user.id]
+    );
+    if (!result.rowCount) return res.status(404).json({ error: "Payment not found." });
+    res.json({ payment: result.rows[0] });
+  } catch (error) { next(error); }
 });
 
 app.post("/api/webhooks/mercadopago", async (req, res, next) => {
