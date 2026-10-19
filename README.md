@@ -1,47 +1,57 @@
 # Mineable App
 
-Independent Mineable-inspired platform prototype. This repository is not connected to StreamCore.
+Independent Mineable-inspired platform prototype. This project is separate from StreamCore.
 
-## Current status
+## What is included
 
-The frontend is a responsive product prototype. **Real crypto mining, balances, deposits, and withdrawals are not enabled yet.** The UI sample values are not spendable funds and must never be presented as real earnings.
+- Responsive dark dashboard with virtual GPU catalog and navigation.
+- Node.js/Express API served from the same origin as the web client.
+- PostgreSQL schema for accounts, email verification, Pix payment requests, webhook receipts, audit events, and an append-only BRL ledger.
+- Registration with email verification, password hashing, short-lived bearer sessions, and rate limits.
+- Mercado Pago Pix order creation and signed webhook verification.
+- Wallet balance and payment history queried from the server ledger.
 
-## Production payment architecture
+## Important current limitations
 
-- **Authentication:** real accounts, email verification, optional MFA, server-side authorization, rate limiting, audit logs.
-- **Ledger:** append-only double-entry accounting in PostgreSQL. Never accept an amount, balance, payout destination, or settlement status from the browser. Use database transactions and idempotency keys.
-- **Payments:** integrate a supported payment provider in server-side code only. Verify webhook signatures; retrieve payment state from provider; deduplicate events; credit the ledger only after confirmed settlement. Store credentials in server-side environment secrets.
-- **Crypto payouts:** use a dedicated payout/custody provider or a reviewed wallet service that supports chosen assets and networks. Validate addresses, apply limits and risk checks, use approval policy, and reconcile receipts. Mark withdrawals completed only after provider receipt or confirmed on-chain transaction.
-- **Mining truth:** real rewards require actual physical miners or a real pool API, verified shares, difficulty/reward accounting, fees and payout thresholds. Virtual GPUs are not real mining.
-- **Operations:** testnet/sandbox first, monitoring, backups, incident response, legal/tax review, terms/privacy, and a kill switch for deposits and withdrawals.
+- Real Pix payments remain **disabled until you configure provider credentials, database, email sender and webhook URL**.
+- Bitcoin/crypto withdrawals are intentionally disabled; a payout/custody provider has not been selected or tested.
+- Real mining is not connected. The dashboard's hashrate and mining reward figures are sample data and are not claims of actual mining or yield.
+- Do not enable production deposits until the app, legal terms, privacy notice, ledger reconciliation, refunds/disputes, and payment webhook are tested end-to-end.
 
-## Suggested production stack
+## Run locally
 
-- Frontend: HTML/CSS/JavaScript prototype (current).
-- Backend: TypeScript API with request schema validation and role-based access.
-- Database: PostgreSQL with migrations and immutable ledger records.
-- Queue: durable jobs for webhooks, reconciliation, and withdrawals.
-- Integrations: select a payment provider and crypto payout provider after confirming supported payment rails, assets, jurisdiction, and account eligibility.
+Requirements: Node.js 20+ and PostgreSQL.
 
-## Server-side environment placeholders
+1. Create a local PostgreSQL database.
+2. Apply the schema: `psql "$DATABASE_URL" -f server/sql/schema.sql`.
+3. Copy `.env.example` into `server/.env` and fill local/test values. The backend loads `dotenv` from its process working directory, so start it inside `server/`.
+4. Install server dependencies and run:
 
-Configure these in the backend host's secret manager only, never in source code:
+   ```sh
+   cd server
+   cp ../.env.example .env
+   npm install
+   npm run dev
+   ```
 
-- `APP_BASE_URL`
-- `DATABASE_URL`
-- `PAYMENT_PROVIDER_SECRET_KEY`
-- `PAYMENT_WEBHOOK_SECRET`
-- `CRYPTO_PAYOUT_PROVIDER_KEY`
+5. Open `http://localhost:3000`. The same server serves the frontend and `/api` endpoints. Never commit the populated `server/.env`.
 
-These are placeholders, not active credentials.
+The placeholder `DATABASE_URL`, JWT secret, Resend API key, Mercado Pago access token and webhook secret must be configured in the deployment secret manager. Use Mercado Pago test credentials first.
 
-## Decisions required before enabling real funds
+## Mercado Pago Pix setup
 
-1. Will deposits be BRL via Pix/card, crypto deposits, or both?
-2. Which crypto asset and network should withdrawals support?
-3. Do mining rewards come from connected real equipment/pool, or a separately funded reward pool?
-4. Which payout provider/custody model will be used?
+1. Create/configure an application in Mercado Pago Developers and get a test Access Token.
+2. Configure a webhook for orders/payment updates to `https://YOUR_DOMAIN/api/webhooks/mercadopago`; set the webhook secret as `MP_WEBHOOK_SECRET`.
+3. Set `MP_ACCESS_TOKEN` only in the server's environment, never in browser JavaScript.
+4. Register a verified sender with the email provider and configure `RESEND_API_KEY` and `MAIL_FROM`.
+5. Test payment creation, QR/copy-and-paste code, signed webhook verification, duplicate notifications, wrong amounts, pending/failed orders, database outages and ledger reconciliation before moving to production credentials.
 
-## Deployment
+The server checks the provider's order status after receiving a signed webhook and credits BRL only once in a database transaction after settlement is confirmed. Never mark a client-side redirect or browser message as proof of payment.
 
-Static hosting can serve the interface only. A backend and verified credentials must be deployed before any real financial operation can be activated.
+## Security notes
+
+- Never trust balances, amount settlement, identity, or payout destination from the browser.
+- Do not add payment provider secrets to GitHub files or chat messages.
+- Use HTTPS in production and a strong random `JWT_SECRET` (32+ characters).
+- Restrict database access, use encrypted backups, monitor webhooks and maintain a reconciliation process.
+- Crypto payouts need their own validated provider/custody integration, limits, approval controls, and on-chain confirmation. They are not implemented.
