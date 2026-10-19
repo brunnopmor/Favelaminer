@@ -148,10 +148,11 @@ app.post("/api/auth/register", async (req, res, next) => {
   if (!emailValid(email) || typeof password !== "string" || password.length < 12 || password.length > 128) {
     return res.status(400).json({ error: "Provide a valid email and a password between 12 and 128 characters." });
   }
-  const client = await database().connect();
+  let client;
   let user;
   const rawToken = crypto.randomBytes(32).toString("base64url");
   try {
+    client = await database().connect();
     await client.query("BEGIN");
     const passwordHash = await bcrypt.hash(password, 12);
     const inserted = await client.query(
@@ -166,11 +167,11 @@ app.post("/api/auth/register", async (req, res, next) => {
     );
     await client.query("COMMIT");
   } catch (error) {
-    await client.query("ROLLBACK").catch(() => {});
+    if (client) await client.query("ROLLBACK").catch(() => {});
     if (error.code === "23505") return res.status(409).json({ error: "An account with this email already exists." });
     return next(error);
   } finally {
-    client.release();
+    if (client) client.release();
   }
   try {
     await sendVerificationEmail(email, rawToken);
@@ -227,11 +228,16 @@ app.get("/api/account", auth, async (req, res, next) => {
 });
 
 app.post("/api/payments/pix", auth, requireVerifiedEmail, async (req, res, next) => {
-  const amount = Number(req.body?.amount);
-  if (!Number.isFinite(amount) || Math.round(amount * 100) !== amount * 100 || amount < 5 || amount > 5000) {
+  const amountText = String(req.body?.amount ?? "");
+  if (!/^\d{1,4}(\.\d{1,2})?$/.test(amountText)) {
+    return res.status(400).json({ error: "Enter an amount with up to two decimal places." });
+  }
+  const amount = Number(amountText);
+  const amountMinor = Math.round(amount * 100);
+  if (!Number.isFinite(amount) || amountMinor < 500 || amountMinor > 500000) {
     return res.status(400).json({ error: "Pix top-ups must be between R$ 5.00 and R$ 5,000.00." });
   }
-  if (!process.env.MP_ACCESS_TOKEN || !process.env.APP_BASE_URL) return res.status(503).json({ error: "Pix payment integration is not configured." });
+  if (!process.env.MP_ACCESS_TOKEN || !process.env.MP_WEBHOOK_SECRET || !process.env.APP_BASE_URL) return res.status(503).json({ error: "Pix checkout is disabled until both the Mercado Pago token and signed-webhook secret are configured." });
   const client = await database().connect();
   const paymentId = crypto.randomUUID();
   const idempotencyKey = crypto.randomUUID();
@@ -239,7 +245,7 @@ app.post("/api/payments/pix", auth, requireVerifiedEmail, async (req, res, next)
     await client.query("BEGIN");
     await client.query(
       "INSERT INTO payments(id,user_id,external_reference,idempotency_key,amount_minor) VALUES($1,$2,$1,$3,$4)",
-      [paymentId, req.user.id, idempotencyKey, Math.round(amount * 100)]
+      [paymentId, req.user.id, idempotencyKey, amountMinor]
     );
     await client.query("COMMIT");
   } catch (error) {
